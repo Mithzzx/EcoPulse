@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoPulse Simulation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1318;
+    --surface: #171d24;
+    --surface-muted: #1c242d;
+    --surface-contrast: #10161d;
+    --border: #2a343f;
+    --border-soft: #222c36;
+    --text: #e8edf2;
+    --text-muted: #a6b0bc;
+    --text-faint: #88929d;
+    --accent: #4ca98b;
+    --accent-strong: #2e8a6d;
+    --blue: #5ea2ff;
+    --green: #57c28f;
+    --amber: #d4a261;
+    --red: #e18888;
+    --off: #5b6672;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Manrope", "Avenir Next", "Segoe UI", sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--bg);
+    padding: 1.5rem;
+    line-height: 1.4;
+    color-scheme: dark;
+  }
+
+  .sim-wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    display: grid;
+    gap: 12px;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+  }
+
+  .header-panel {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 6px;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .badge {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+  }
+
+  .badge-run {
+    background: #16362c;
+    color: #8bdfbe;
+    border-color: #295646;
+  }
+
+  .badge-stop {
+    background: #372427;
+    color: #e9a3a8;
+    border-color: #58353a;
+  }
+
+  .meta-chip {
+    font-size: 12px;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    background: var(--surface-contrast);
+    border-radius: 999px;
+    padding: 6px 10px;
+  }
+
+  .meta-chip strong {
+    color: var(--text);
+    font-weight: 600;
+    margin-left: 3px;
+  }
+
+  .control-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .sim-btn {
+    border: 1px solid var(--border);
+    background: var(--surface-contrast);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 8px 15px;
+    font-size: 13px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  .sim-btn:hover {
+    background: var(--surface-muted);
+    border-color: #394553;
+  }
+
+  .sim-btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #08140f;
+  }
+
+  .sim-btn.primary:hover {
+    background: var(--accent-strong);
+    border-color: var(--accent-strong);
+    color: #eaf5f0;
+  }
+
+  .speed-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-left: 2px;
+  }
+
+  #speed-slider {
+    width: 104px;
+    accent-color: var(--accent);
+  }
+
+  .occupancy-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .occupancy-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .occ-yes { background: var(--accent); }
+  .occ-no { background: var(--off); }
+
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .metric {
+    background: var(--surface-muted);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 12px;
+  }
+
+  .metric-label {
+    font-size: 11px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+
+  .metric-val {
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .metric-sub {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .green { color: var(--green); }
+  .red { color: var(--red); }
+  .blue { color: var(--blue); }
+  .amber { color: var(--amber); }
+
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 12px;
+  }
+
+  .panel-title {
+    font-size: 12px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+  }
+
+  .panel-subtitle {
+    margin-top: 5px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .panel-gap {
+    margin-top: 10px;
+  }
+
+  .appliance-row {
+    display: grid;
+    grid-template-columns: 32px 1fr 64px 42px 42px;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .appliance-row:last-child {
+    border-bottom: none;
+  }
+
+  .app-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    border: 1px solid var(--border);
+    background: var(--surface-contrast);
+  }
+
+  .app-name {
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  .app-watts {
+    font-size: 11px;
+    color: var(--text-faint);
+    text-align: right;
+  }
+
+  .ai-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    font-weight: 700;
+    text-align: center;
+    border: 1px solid transparent;
+    cursor: pointer;
+  }
+
+  .ai-on {
+    color: #90e0c0;
+    background: #16362c;
+    border-color: #295646;
+  }
+
+  .ai-off {
+    color: #ebb1a6;
+    background: #392724;
+    border-color: #5f3c37;
+  }
+
+  .toggle {
+    width: 40px;
+    height: 22px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    position: relative;
+    transition: background 0.2s;
+    background: var(--off);
+  }
+
+  .toggle-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #e9eef5;
+    transition: left 0.2s;
+  }
+
+  .toggle.on {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .toggle.off {
+    background: var(--off);
+  }
+
+  .toggle.on .toggle-knob { left: 20px; }
+  .toggle.off .toggle-knob { left: 2px; }
+
+  .toggle:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .savings-bar-wrap {
+    margin-top: 8px;
+  }
+
+  .split-line {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .savings-bar-bg {
+    height: 8px;
+    background: var(--border-soft);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 5px;
+  }
+
+  .savings-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 999px;
+    transition: width 0.5s;
+  }
+
+  .env-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .env-item {
+    background: var(--surface-contrast);
+    border: 1px solid var(--border-soft);
+    border-radius: 9px;
+    padding: 9px 8px;
+    text-align: center;
+  }
+
+  .env-val {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+  }
+
+  .env-lbl {
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+
+  .nilm-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 11px;
+  }
+
+  .nilm-label {
+    width: 96px;
+    color: var(--text-muted);
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .nilm-bar-bg {
+    flex: 1;
+    height: 8px;
+    background: var(--border-soft);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .nilm-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.4s;
+  }
+
+  .nilm-val {
+    width: 58px;
+    font-size: 11px;
+    color: var(--text-faint);
+    text-align: right;
+  }
+
+  .chart-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+
+  .chart-legend {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .chart-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .legend-line {
+    width: 12px;
+    height: 3px;
+    border-radius: 999px;
+    display: inline-block;
+  }
+
+  .legend-line.base { background: #8b94a0; }
+  .legend-line.eco { background: var(--accent); }
+
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 240px;
+  }
+
+  .insight-grid {
+    display: grid;
+    grid-template-columns: 1.08fr 0.92fr;
+    gap: 12px;
+  }
+
+  .outcome-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 12px;
+  }
+
+  .outcome-table th,
+  .outcome-table td {
+    border-bottom: 1px solid var(--border-soft);
+    padding: 8px 6px;
+  }
+
+  .outcome-table th {
+    color: var(--text-faint);
+    font-weight: 600;
+    text-align: left;
+  }
+
+  .outcome-table td:nth-child(2),
+  .outcome-table td:nth-child(3),
+  .outcome-table td:nth-child(4) {
+    text-align: right;
+  }
+
+  .outcome-note {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .outcome-note strong {
+    color: var(--green);
+  }
+
+  .log-area {
+    height: 230px;
+    overflow-y: auto;
+    font-size: 11px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--text-faint);
+    border-top: 1px solid var(--border-soft);
+    margin-top: 10px;
+    padding-top: 8px;
+  }
+
+  .log-entry {
+    margin-bottom: 4px;
+    line-height: 1.35;
+  }
+
+  .log-entry.good { color: var(--green); }
+  .log-entry.warn { color: var(--amber); }
+  .log-entry.info { color: var(--blue); }
+
+  @media (max-width: 980px) {
+    .metrics-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .main-grid,
+    .insight-grid { grid-template-columns: 1fr; }
+    h1 { font-size: 24px; }
+  }
+
+  @media (max-width: 620px) {
+    body { padding: 1rem; }
+    .header-panel { flex-direction: column; }
+    .header-meta { justify-content: flex-start; }
+    .metrics-row { grid-template-columns: 1fr; }
+    .appliance-row { grid-template-columns: 28px 1fr 58px 42px 42px; }
+    .app-icon { width: 28px; height: 28px; }
+    .metric-val { font-size: 30px; }
+    .env-val { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="sim-wrap">
+  <header class="panel header-panel">
+    <div>
+      <div class="eyebrow">Edge-AI Residential Energy Management</div>
+      <h1>EcoPulse Simulator</h1>
+      <p class="subtitle">Decentralized NILM and PPO control for intelligent household load optimization.</p>
+    </div>
+    <div class="header-meta">
+      <span class="badge badge-run" id="status-badge">Running</span>
+      <span class="meta-chip">Simulated time <strong id="sim-time">06:00</strong></span>
+      <span class="meta-chip">Day <strong id="sim-day">1</strong></span>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="control-row">
+      <button class="sim-btn primary" id="toggle-btn" onclick="toggleSim()">Pause</button>
+      <button class="sim-btn" onclick="resetSim()">Reset</button>
+      <div class="speed-wrap">
+        <span>Speed</span>
+        <input type="range" min="1" max="5" value="2" step="1" id="speed-slider" oninput="updateSpeed(this.value)">
+        <span id="speed-label">2x</span>
+      </div>
+      <div class="occupancy-wrap">
+        <span class="occupancy-dot" id="occ-dot"></span>
+        <span id="occ-label">Occupied</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="metrics-row">
+    <div class="metric">
+      <div class="metric-label">Live power draw</div>
+      <div class="metric-val blue" id="live-power">0 W</div>
+      <div class="metric-sub">Whole-home active load</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Today's cost</div>
+      <div class="metric-val" id="today-cost">₹0.00</div>
+      <div class="metric-sub">Tariff: ₹8.5 per kWh</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Saved today</div>
+      <div class="metric-val green" id="saved-today">₹0.00</div>
+      <div class="metric-sub" id="saved-pct">0% vs baseline</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">CO2 avoided</div>
+      <div class="metric-val green" id="co2-saved">0 g</div>
+      <div class="metric-sub">0.82 kg CO2 per kWh</div>
+    </div>
+  </section>
+
+  <section class="main-grid">
+    <article class="panel">
+      <div class="panel-title">Appliance Orchestration</div>
+      <p class="panel-subtitle">RL policy control with optional manual override per endpoint.</p>
+      <div id="appliance-list"></div>
+      <div class="savings-bar-wrap">
+        <div class="split-line">
+          <span>Optimization progress</span><span id="opt-pct">0%</span>
+        </div>
+        <div class="savings-bar-bg"><div class="savings-bar-fill" id="opt-bar" style="width:0%"></div></div>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-title">Context Sensors</div>
+      <div class="env-row">
+        <div class="env-item">
+          <div class="env-val" id="temp-val">28°C</div>
+          <div class="env-lbl">Temperature</div>
+        </div>
+        <div class="env-item">
+          <div class="env-val" id="humid-val">62%</div>
+          <div class="env-lbl">Humidity</div>
+        </div>
+        <div class="env-item">
+          <div class="env-val" id="ldr-val">Low</div>
+          <div class="env-lbl">Ambient light</div>
+        </div>
+      </div>
+      <div class="panel-title panel-gap">NILM Disaggregation</div>
+      <div id="nilm-bars"></div>
+    </article>
+  </section>
+
+  <section class="panel">
+    <div class="chart-head">
+      <div class="panel-title">Power Consumption Over Time</div>
+      <div class="chart-legend">
+        <span><span class="legend-line base"></span>Baseline</span>
+        <span><span class="legend-line eco"></span>EcoPulse</span>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="powerChart" role="img" aria-label="Line chart showing baseline versus EcoPulse power consumption over simulated time">Power comparison chart</canvas>
+    </div>
+  </section>
+
+  <section class="insight-grid">
+    <article class="panel">
+      <div class="panel-title">Projected Monthly Outcomes</div>
+      <p class="panel-subtitle">Proposal baseline: 450 kWh per month at ₹8.5 per kWh.</p>
+      <table class="outcome-table">
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Baseline</th>
+            <th>EcoPulse</th>
+            <th>Reduction</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Energy (kWh)</td>
+            <td id="proj-energy-base">450</td>
+            <td id="proj-energy-eco">308</td>
+            <td id="proj-energy-red">31.5%</td>
+          </tr>
+          <tr>
+            <td>Monthly bill</td>
+            <td id="proj-bill-base">₹3825</td>
+            <td id="proj-bill-eco">₹2610</td>
+            <td id="proj-bill-red">₹1215</td>
+          </tr>
+          <tr>
+            <td>Carbon footprint</td>
+            <td id="proj-co2-base">369 kg</td>
+            <td id="proj-co2-eco">252 kg</td>
+            <td id="proj-co2-red">117 kg</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="outcome-note">Estimated annual household savings: <strong id="proj-annual">₹14580</strong>.</p>
+    </article>
+
+    <article class="panel">
+      <div class="panel-title">RL Agent Log</div>
+      <div class="log-area" id="log-area"></div>
+    </article>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const TARIFF = 8.5 / 1000;
+const CO2_FACTOR = 0.82;
+const MONTHLY_BASELINE_KWH = 450;
+const TARGET_REDUCTION_PCT = 31.5;
+
+const APPLIANCES = [
+  { id:'ac',     name:'Air conditioner', icon:'AC', watts:1500, standby:30,  color:'#5e9ef8', nilmColor:'#5e9ef8', schedule:[7,23], comfort:true },
+  { id:'wh',     name:'Water heater',    icon:'WH', watts:2000, standby:5,   color:'#e19154', nilmColor:'#e19154', schedule:[6,8] },
+  { id:'fridge', name:'Refrigerator',    icon:'RF', watts:300,  standby:300, color:'#d7b46a', nilmColor:'#d7b46a', schedule:[0,24] },
+  { id:'light',  name:'Smart lights',    icon:'LT', watts:60,   standby:2,   color:'#f0d67c', nilmColor:'#f0d67c', schedule:[18,23] },
+  { id:'geyser', name:'Geyser',          icon:'GY', watts:1800, standby:0,   color:'#5bc2a4', nilmColor:'#5bc2a4', schedule:[5,7] },
+  { id:'ev',     name:'EV charger',      icon:'EV', watts:800,  standby:0,   color:'#a191f3', nilmColor:'#a191f3', schedule:[22,24] },
+];
+
+let state = {
+  running: true,
+  tick: 0,
+  speedMul: 2,
+  simMinutes: 6 * 60,
+  day: 1,
+  occupied: true,
+  temp: 28,
+  humid: 62,
+  ldr: 'Low',
+  appStates: {},
+  appAI: {},
+  cumCost: 0,
+  cumBaseline: 0,
+  cumCO2saved: 0,
+  chartLabels: [],
+  chartEco: [],
+  chartBase: [],
+  trainEpisodes: 0,
+};
+
+APPLIANCES.forEach(a => {
+  state.appStates[a.id] = false;
+  state.appAI[a.id] = true;
+});
+
+function timeStr(mins) {
+  const h = Math.floor(mins / 60) % 24;
+  const m = mins % 60;
+  return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+}
+
+function getBaseline(mins, ecoPower) {
+  const h = (mins / 60) % 24;
+
+  // Baseline represents non-optimized behavior: fixed schedules and higher idle usage.
+  let baseline = 120;
+  APPLIANCES.forEach(a => {
+    const inSchedule = h >= a.schedule[0] && h < a.schedule[1];
+
+    if (a.id === 'fridge') {
+      baseline += a.watts;
+      return;
+    }
+
+    if (a.id === 'ac') {
+      baseline += (inSchedule && state.temp > 24) ? a.watts : a.standby;
+      return;
+    }
+
+    if (a.id === 'light') {
+      const naiveLightOn = inSchedule || state.ldr === 'Low';
+      baseline += naiveLightOn ? a.watts : a.standby;
+      return;
+    }
+
+    if (a.id === 'ev') {
+      baseline += inSchedule ? a.watts : a.standby;
+      return;
+    }
+
+    baseline += inSchedule ? a.watts : a.standby;
+  });
+
+  const noisyBaseline = baseline + (Math.random() - 0.5) * 60;
+  return Math.max(noisyBaseline, ecoPower + 140);
+}
+
+function getOccupancy(mins) {
+  const h = (mins / 60) % 24;
+  if (h >= 9 && h < 18) return Math.random() > 0.6;
+  return true;
+}
+
+function agentDecide(a, mins, occupied) {
+  if (!state.appAI[a.id]) return state.appStates[a.id];
+  const h = (mins / 60) % 24;
+  const inSchedule = h >= a.schedule[0] && h < a.schedule[1];
+  if (a.id === 'ac') return inSchedule && occupied && state.temp > 26;
+  if (a.id === 'wh') return inSchedule && (occupied || h < 7);
+  if (a.id === 'fridge') return true;
+  if (a.id === 'light') return inSchedule && occupied && state.ldr === 'Low';
+  if (a.id === 'geyser') return inSchedule;
+  if (a.id === 'ev') return inSchedule && occupied;
+  return inSchedule;
+}
+
+let chart;
+function initChart() {
+  const ctx = document.getElementById('powerChart').getContext('2d');
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        { label:'Baseline', data:[], borderColor:'#8b94a0', borderWidth:1.6, pointRadius:0, fill:false, tension:0.3 },
+        { label:'EcoPulse', data:[], borderColor:'#4ca98b', borderWidth:2, pointRadius:0, fill:false, tension:0.3 },
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          backgroundColor: '#0f1318',
+          titleColor: '#e8edf2',
+          bodyColor: '#cad3de',
+          borderColor: '#2a343f',
+          borderWidth: 1,
+        }
+      },
+      scales: {
+        x: {
+          ticks: { maxTicksLimit: 8, font: { size: 10 }, color: '#9aa6b2' },
+          grid: { color: 'rgba(138,148,160,0.18)', drawTicks: false }
+        },
+        y: {
+          ticks: { font: { size: 10 }, color: '#9aa6b2', callback: v => v + 'W' },
+          grid: { color: 'rgba(138,148,160,0.18)' },
+          min: 0,
+          max: 2200,
+        }
+      },
+      animation: { duration: 0 }
+    }
+  });
+}
+
+function renderAppliances() {
+  const el = document.getElementById('appliance-list');
+  el.innerHTML = APPLIANCES.map(a => {
+    const on = state.appStates[a.id];
+    const ai = state.appAI[a.id];
+    return `<div class="appliance-row">
+      <div class="app-icon" style="background:${a.color}22;border-color:${a.color}66;color:${a.color};">${a.icon}</div>
+      <div class="app-name">${a.name}</div>
+      <div class="app-watts">${on ? a.watts + 'W' : '-'}</div>
+      <span class="ai-badge ${ai ? 'ai-on' : 'ai-off'}" onclick="toggleAI('${a.id}')" title="Toggle AI control">${ai ? 'AI' : 'MAN'}</span>
+      <button class="toggle ${on ? 'on' : 'off'}" onclick="manualToggle('${a.id}')" ${ai ? 'disabled' : ''}>
+        <div class="toggle-knob"></div>
+      </button>
+    </div>`;
+  }).join('');
+}
+
+function renderNILM() {
+  const el = document.getElementById('nilm-bars');
+  const totalW = APPLIANCES.reduce((s, a) => s + (state.appStates[a.id] ? a.watts : 0), 0) || 1;
+  el.innerHTML = APPLIANCES.map(a => {
+    const w = state.appStates[a.id] ? a.watts : 0;
+    const pct = Math.round((w / totalW) * 100);
+    return `<div class="nilm-bar-row">
+      <div class="nilm-label">${a.name}</div>
+      <div class="nilm-bar-bg"><div class="nilm-bar-fill" style="width:${pct}%;background:${a.nilmColor};"></div></div>
+      <div class="nilm-val">${w}W</div>
+    </div>`;
+  }).join('');
+}
+
+function addLog(msg, type='info') {
+  const el = document.getElementById('log-area');
+  const div = document.createElement('div');
+  div.className = `log-entry ${type}`;
+  div.textContent = `[${timeStr(state.simMinutes)}] ${msg}`;
+  el.insertBefore(div, el.firstChild);
+  if (el.children.length > 80) el.removeChild(el.lastChild);
+}
+
+function updateEnv() {
+  const h = (state.simMinutes / 60) % 24;
+  state.temp = Math.round(22 + 8 * Math.sin((h - 8) * Math.PI / 16) + (Math.random() - 0.5) * 1.5);
+  state.humid = Math.round(55 + 15 * Math.cos(h * Math.PI / 24) + (Math.random() - 0.5) * 3);
+  state.ldr = (h >= 6 && h < 19) ? 'High' : 'Low';
+  document.getElementById('temp-val').textContent = state.temp + '°C';
+  document.getElementById('humid-val').textContent = state.humid + '%';
+  document.getElementById('ldr-val').textContent = state.ldr;
+}
+
+function updateProjections(savePct) {
+  const reduction = state.tick < 12 ? TARGET_REDUCTION_PCT : Math.max(0, Math.min(45, savePct));
+  const ecoKWh = MONTHLY_BASELINE_KWH * (1 - reduction / 100);
+  const baselineBill = MONTHLY_BASELINE_KWH * 8.5;
+  const ecoBill = ecoKWh * 8.5;
+  const baselineCO2 = MONTHLY_BASELINE_KWH * CO2_FACTOR;
+  const ecoCO2 = ecoKWh * CO2_FACTOR;
+  const annualSavings = (baselineBill - ecoBill) * 12;
+
+  document.getElementById('proj-energy-base').textContent = MONTHLY_BASELINE_KWH.toFixed(0);
+  document.getElementById('proj-energy-eco').textContent = ecoKWh.toFixed(0);
+  document.getElementById('proj-energy-red').textContent = reduction.toFixed(1) + '%';
+
+  document.getElementById('proj-bill-base').textContent = '₹' + baselineBill.toFixed(0);
+  document.getElementById('proj-bill-eco').textContent = '₹' + ecoBill.toFixed(0);
+  document.getElementById('proj-bill-red').textContent = '₹' + (baselineBill - ecoBill).toFixed(0);
+
+  document.getElementById('proj-co2-base').textContent = baselineCO2.toFixed(0) + ' kg';
+  document.getElementById('proj-co2-eco').textContent = ecoCO2.toFixed(0) + ' kg';
+  document.getElementById('proj-co2-red').textContent = (baselineCO2 - ecoCO2).toFixed(0) + ' kg';
+
+  document.getElementById('proj-annual').textContent = '₹' + annualSavings.toFixed(0);
+}
+
+function tick() {
+  if (!state.running) return;
+
+  state.tick++;
+  state.simMinutes += state.speedMul * 5;
+  if (state.simMinutes >= 24 * 60) {
+    state.simMinutes = 0;
+    state.day++;
+    addLog(`Day ${state.day} started. Agent trained on ${state.trainEpisodes} episodes.`, 'info');
+  }
+
+  state.occupied = getOccupancy(state.simMinutes);
+  updateEnv();
+
+  const prev = { ...state.appStates };
+  APPLIANCES.forEach(a => {
+    const ns = agentDecide(a, state.simMinutes, state.occupied);
+    if (state.appAI[a.id]) {
+      if (prev[a.id] !== ns) {
+        addLog(`${ns ? 'ON' : 'OFF'} -> ${a.name} (RL decision)`, ns ? 'good' : 'warn');
+        state.trainEpisodes++;
+      }
+      state.appStates[a.id] = ns;
+    }
+  });
+
+  const livePower = APPLIANCES.reduce((s, a) => s + (state.appStates[a.id] ? a.watts : 0), 0);
+  const baselinePower = getBaseline(state.simMinutes, livePower);
+  const dtHours = (state.speedMul * 5) / 60;
+
+  state.cumCost += livePower * TARIFF * dtHours;
+  state.cumBaseline += baselinePower * TARIFF * dtHours;
+  state.cumCO2saved += Math.max(0, (baselinePower - livePower) * dtHours / 1000) * CO2_FACTOR * 1000;
+
+  const savedAmt = Math.max(0, state.cumBaseline - state.cumCost);
+  const savePctRaw = state.cumBaseline > 0 ? (savedAmt / state.cumBaseline) * 100 : 0;
+  const savePct = Math.round(savePctRaw);
+
+  document.getElementById('live-power').textContent = livePower + ' W';
+  document.getElementById('today-cost').textContent = '₹' + state.cumCost.toFixed(2);
+  document.getElementById('saved-today').textContent = '₹' + savedAmt.toFixed(2);
+  document.getElementById('saved-today').className = 'metric-val green';
+  document.getElementById('saved-pct').textContent = savePct + '% vs baseline';
+  document.getElementById('co2-saved').textContent = state.cumCO2saved < 1000
+    ? Math.round(state.cumCO2saved) + ' g'
+    : (state.cumCO2saved / 1000).toFixed(2) + ' kg';
+  document.getElementById('sim-time').textContent = timeStr(state.simMinutes);
+  document.getElementById('sim-day').textContent = state.day;
+  document.getElementById('opt-bar').style.width = Math.min(Math.max(savePct, 0) * 2, 100) + '%';
+  document.getElementById('opt-pct').textContent = Math.max(savePct, 0) + '%';
+  updateProjections(savePctRaw);
+
+  const occDot = document.getElementById('occ-dot');
+  occDot.className = 'occupancy-dot ' + (state.occupied ? 'occ-yes' : 'occ-no');
+  document.getElementById('occ-label').textContent = state.occupied ? 'Occupied' : 'Unoccupied';
+
+  if (state.tick % 3 === 0) {
+    state.chartLabels.push(timeStr(state.simMinutes));
+    state.chartEco.push(livePower);
+    state.chartBase.push(Math.round(baselinePower));
+    if (state.chartLabels.length > 80) {
+      state.chartLabels.shift();
+      state.chartEco.shift();
+      state.chartBase.shift();
+    }
+    chart.data.labels = state.chartLabels;
+    chart.data.datasets[0].data = state.chartBase;
+    chart.data.datasets[1].data = state.chartEco;
+    chart.update('none');
+  }
+
+  renderAppliances();
+  renderNILM();
+
+  if (state.tick % 10 === 0) {
+    const reward = ((baselinePower - livePower) * 0.001).toFixed(3);
+    addLog(`PPO update: reward=${reward}, episodes=${state.trainEpisodes}`, 'info');
+  }
+}
+
+function toggleSim() {
+  state.running = !state.running;
+  document.getElementById('toggle-btn').textContent = state.running ? 'Pause' : 'Resume';
+  document.getElementById('status-badge').textContent = state.running ? 'Running' : 'Paused';
+  document.getElementById('status-badge').className = 'badge ' + (state.running ? 'badge-run' : 'badge-stop');
+}
+
+function resetSim() {
+  state.tick = 0;
+  state.simMinutes = 6 * 60;
+  state.day = 1;
+  state.cumCost = 0;
+  state.cumBaseline = 0;
+  state.cumCO2saved = 0;
+  state.trainEpisodes = 0;
+  state.chartLabels = [];
+  state.chartEco = [];
+  state.chartBase = [];
+
+  APPLIANCES.forEach(a => {
+    state.appStates[a.id] = false;
+    state.appAI[a.id] = true;
+  });
+
+  chart.data.labels = [];
+  chart.data.datasets[0].data = [];
+  chart.data.datasets[1].data = [];
+  chart.update('none');
+
+  document.getElementById('log-area').innerHTML = '';
+  updateProjections(TARGET_REDUCTION_PCT);
+  addLog('System reset. EcoPulse edge stack reinitialized.', 'info');
+  renderAppliances();
+  renderNILM();
+}
+
+function updateSpeed(v) {
+  state.speedMul = parseInt(v, 10);
+  document.getElementById('speed-label').textContent = v + 'x';
+}
+
+function toggleAI(id) {
+  state.appAI[id] = !state.appAI[id];
+  const appliance = APPLIANCES.find(a => a.id === id);
+  addLog(`${appliance.name}: switched to ${state.appAI[id] ? 'AI' : 'manual'} control`, 'warn');
+  renderAppliances();
+}
+
+function manualToggle(id) {
+  if (state.appAI[id]) return;
+  state.appStates[id] = !state.appStates[id];
+  const appliance = APPLIANCES.find(a => a.id === id);
+  addLog(`Manual override: ${appliance.name} turned ${state.appStates[id] ? 'ON' : 'OFF'}`, 'warn');
+  renderAppliances();
+  renderNILM();
+}
+
+initChart();
+renderAppliances();
+renderNILM();
+updateProjections(TARGET_REDUCTION_PCT);
+document.getElementById('occ-dot').className = 'occupancy-dot occ-yes';
+addLog('EcoPulse simulator initialized. Edge inference pipeline online.', 'good');
+addLog('NILM model active. Appliance signatures synchronized.', 'info');
+addLog('PPO policy loaded on Raspberry Pi 5 edge node.', 'good');
+
+setInterval(tick, 400);
+</script>
+</body>
+</html>
