@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoPulse - Energy Monitoring Simulation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>EcoPulse</h1>
+            <p>Real-time Energy Consumption Monitoring & Optimization</p>
+        </header>
+        
+        <main>
+            <section class="dashboard">
+                <div class="metrics">
+                    <div class="metric-card">
+                        <h3>Current Power</h3>
+                        <p class="value">0 W</p>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Daily Consumption</h3>
+                        <p class="value">0 kWh</p>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Estimated Cost</h3>
+                        <p class="value">$0.00</p>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="energyChart"></canvas>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
